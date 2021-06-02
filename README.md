@@ -5,4 +5,4 @@ currently dysfunctional. q matrices don't update, most likely since i chose to i
 will fix that when i find some time.
 
 this was one of my first projects and as such looks terrible. i broke naming conventions and didn't use many comments.
-if you want to test this out i'd recommend you wait for a future release.
+if you want to test this out i'd recommend you wait for a future release, but i'd be happy if you roast me with some useful advice in between.

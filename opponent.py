@@ -6,14 +6,23 @@ from player import Player
 
 class Opponent(Player):
     
+    def __init__(self):
+        super().__init__()
+        self.lastBetPips = 0
+        self.lastBetNums = 0
+    
     def __str__(self):
         return 'hardcoded'
     
+    def analysis(self):
+
+        print('Nums: ', self.lastBetNums)
+        print('Pips: ', self.lastBetPips)
     
     def lowestAllowedNum(self, env, pips):
         if len(env.state)>1:
             lastNum, lastPips = env.state[-1]
-        else: lastNum, lastPips = 0,0
+        else: lastNum, lastPips = 2,6
         
         if lastPips < pips:
             return lastNum
@@ -36,6 +45,9 @@ class Opponent(Player):
             pips = np.argmax(self.counts)+2 #bet pips we have most of
             num = max(self.lowestAllowedNum(env, pips), self.counts[pips-2]) + np.random.choice([0,1,2])
         
+        self.lastBetPips = pips
+        self.lastBetNums = min(8, num)
+        
         return [min(8, num), pips]
         
     def checkCallout(self, env):
@@ -43,6 +55,13 @@ class Opponent(Player):
         coProb = min((2**max(lastNum - self.counts[lastPips-2], 0)) / (2**5), 1)
         callout = np.random.choice([0,1], p=[1-coProb, coProb])
         
+        '''
+        if bool(callout):
+            print('CALLING OUT! coProb: ', coProb)
+            print('last pips:', lastPips)
+            print('last num:', lastNum)
+            print('counts:', self.counts[lastPips-2])
+        '''
         return bool(callout)
     
     def makeTurn(self, env):

@@ -16,7 +16,7 @@ def play_game(ply, opp, env, dialog=False):
     #choose players from ['human', 'defaultOpp', 'opponent', 'qOpp', 'deepQopp']
     #ply is player 0, opp is player 1
 
-
+    ply.player=0
     opp.player=1
     reward=0
     startingPlayer = env.beginner
@@ -171,61 +171,83 @@ opp_hist = list(np.repeat(0,100))
 #opp_callout_hist=[np.sum(opp.qCallout)/np.size(opp.qCallout)]
 
 
-check = copy.deepcopy(opp)
 
-
-
-if False:
+def load_players():
     env = Environment(np.random.choice(2))
     ply = pickle.load(open('C:\\Users\\Lennart\\Desktop\\qPlayer.pickle', 'rb'))
-    ply.eps = .3
+    ply.eps = .2
     opp = copy.deepcopy(ply)
     opp.eps = 0
-#pickle_out_opp = open('Opponent', 'wb')
-#pickle_in_opp = open('Opponent', 'rb')
 
-x = 0
-test_results = []
+    return ply, opp, env
+
+def save_player(path='C:\\Users\\Lennart\\Desktop\\qPlayerNew.pickle'):
+    pickle.dump(ply, open(path, 'wb'))
 
 
-start = time.time()
-for i in range(200):
-    remember = False
-    if not remember:
+def run_training(ply, opp, env, start_round, end_round, episodes, eps=.2, alpha=.99, auto_update=False):
+
+    import pyttsx3
+    sound_engine = pyttsx3.init()
+    sound_engine.setProperty('voice', 'HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Speech\Voices\Tokens\TTS_MS_EN-US_ZIRA_11.0')
+
+
+    x = 0
+    test_results = []
+    ply.eps=eps
+    opp.eps=0
+
+    #ply = copy.deepcopy(opp)
+    #ply.eps = .3
+
+    sound_engine.say('training initialized')
+    sound_engine.runAndWait()
+
+    start = time.time()
+    for i in range(start_round, end_round):
+
         ply.decisionHistory = []
         ply.history = ply.history[-100:]
-    #if i in [100,200,300,400]:
-    #    pickle.dump(ply, open('C:\\Users\\Lennart\\Desktop\\qPlayerNew.pickle', 'wb'))
-    epstart = time.time()
-    print('__________Round: ', i)
-    new_hist, ply, opp = qlearning(env=env, ply=ply, opp=opp, alpha=.99**i, episodes=20000, last_reward=hist[-1])
-    hist += new_hist
-    #opp_hist += [-i for i in hist]
-    callout_hist += [np.sum(ply.qCallout)/np.size(ply.qCallout)]
-    #opp_callout_hist += [np.sum(opp.qCallout)/np.size(opp.qCallout)]
-    #opp.eps*=.9
-
-    if i%10 == 0:
-        test = test_play(env, ply, opp)
-        print('TEST SCORE: ', np.mean(test))
-        test_results += [np.mean(test)]
-        if False and np.mean(test) > .05:
-            opp = copy.deepcopy(ply)
-            opp.eps=0
-            x+=1
+        #clean history to prevent large model size. remove to analyse decision history
 
 
-    print("Ep Time: ", time.time()-epstart)
+        epstart = time.time()
+        print('__________Round: ', i)
+        new_hist, ply, opp = qlearning(env=env, ply=ply, opp=opp, alpha=alpha**i, episodes=episodes, last_reward=hist[-1])
+        hist += new_hist
+
+        #callout_hist += [np.sum(ply.qCallout)/np.size(ply.qCallout)]
+
+        if i%10 == 0:
+            test = test_play(env, ply, opp)
+            print('TEST SCORE: ', np.mean(test))
+            test_results += [np.mean(test)]
+            if auto_update and np.mean(test) > .05:
+                #this func copies ply to opp as soon as he got significantly better
+                opp = copy.deepcopy(ply)
+                opp.eps=0
+                x+=1
+
+
+        print("Ep Time: ", time.time()-epstart)
 
 
 
-#test = test_play(env, ply, opp)
-#plt.plot([np.mean(test[i*1000:(i+1)*1000]) for i in range(10)])
 
-end = time.time()
-print(end-start)
+    #test = test_play(env, ply, opp)
+    #plt.plot([np.mean(test[i*1000:(i+1)*1000]) for i in range(10)])
 
-plt.plot(test_results)
+    end = time.time()
+    print(end-start)
+
+    sound_engine.say('training complete')
+    sound_engine.runAndWait()
+
+    plt.plot(test_results)
+
+run_training(ply, opp, env, 150, 500, 30000)
+
+
 
 if False:
     #non_zero_hist = [i for i in hist if i!=0]
